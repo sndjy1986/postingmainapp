@@ -71,13 +71,13 @@ def index():
     )
     show_admin_alert = available_medics <= 3
 
-    return render_template("index.html",
-                           trucks=truck_data["trucks"],
+    return render_template("index.html", trucks=truck_data["trucks"],
                            status=truck_status,
                            flash_trucks=flash_trucks,
                            logistics_times=logistics_times,
                            activity_log=activity_log,
                            show_admin_alert=show_admin_alert)
+
 @app.route("/dispatch", methods=["POST"])
 def dispatch():
     truck_id = request.form["truck_id"]
@@ -117,12 +117,27 @@ def make_logistics(truck_id):
     log_action(truck_id, "logistics")
     return redirect(url_for("index"))
 
+@app.route("/destination/<truck_id>")
+def make_destination(truck_id):
+    truck_status[truck_id] = "destination"
+    logistics_timer[truck_id] = datetime.utcnow()
+    log_action(truck_id, "destination")
+    return redirect(url_for("index"))
+
+@app.route("/reset_destination/<truck_id>")
+def reset_destination(truck_id):
+    if truck_status.get(truck_id) == "destination":
+        truck_status[truck_id] = "available"
+        logistics_timer.pop(truck_id, None)
+        log_action(truck_id, "available")
+    return redirect(url_for("index"))
+
 @app.route("/availability", methods=["GET", "POST"])
 def availability():
     if request.method == "POST":
         selected = request.form.getlist("available")
         for truck in truck_status:
-            if truck_status[truck] not in ["out", "logistics"]:
+            if truck_status[truck] not in ["out", "logistics", "destination"]:
                 new_status = "available" if truck in selected else "unavailable"
                 if truck_status[truck] != new_status:
                     truck_status[truck] = new_status
@@ -160,19 +175,3 @@ def admin():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-@app.route("/destination/<truck_id>")
-def make_destination(truck_id):
-    truck_status[truck_id] = "destination"
-    logistics_timer[truck_id] = datetime.utcnow()
-    log_action(truck_id, "destination")
-    return redirect(url_for("index"))
-
-@app.route("/reset_destination/<truck_id>")
-def reset_destination(truck_id):
-    if truck_status.get(truck_id) == "destination":
-        truck_status[truck_id] = "available"
-        logistics_timer.pop(truck_id, None)
-        log_action(truck_id, "available")
-    return redirect(url_for("index"))
