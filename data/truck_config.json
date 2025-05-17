@@ -89,12 +89,8 @@
             "location": "Station M19"
         },
         {
-            "id": "Medic 20",
+            "id": "Medic A-20",
             "location": "Station M20"
-        },
-        {
-            "id": "ALS 1",
-            "location": "Station A1"
         },
         {
             "id": "ALS 2",
@@ -109,28 +105,12 @@
             "location": "Station A4"
         },
         {
-            "id": "ALS 5",
-            "location": "Station A5"
-        },
-        {
             "id": "ALS 6",
             "location": "Station A6"
         },
         {
             "id": "ALS 7",
             "location": "Station A7"
-        },
-        {
-            "id": "ALS 8",
-            "location": "Station A8"
-        },
-        {
-            "id": "ALS 9",
-            "location": "Station A9"
-        },
-        {
-            "id": "ALS 10",
-            "location": "Station A10"
         },
         {
             "id": "ALS 11",
@@ -141,35 +121,15 @@
             "location": "Station A12"
         },
         {
-            "id": "ALS 13",
-            "location": "Station A13"
-        },
-        {
-            "id": "ALS 14",
-            "location": "Station A14"
-        },
-        {
-            "id": "ALS 15",
-            "location": "Station A15"
-        },
-        {
-            "id": "ALS 16",
-            "location": "Station A16"
-        },
-        {
             "id": "ALS 17",
             "location": "Station A17"
-        },
-        {
-            "id": "ALS 18",
-            "location": "Station A18"
         },
         {
             "id": "ALS 19",
             "location": "Station A19"
         },
         {
-            "id": "ALS 20",
+            "id": "ALS 21",
             "location": "Station A20"
         }
     ],
