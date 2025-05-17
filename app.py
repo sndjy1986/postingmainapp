@@ -48,8 +48,6 @@ def log_action(truck_id, new_status):
     with open(LOG_PATH, "w") as f:
         for line in entries:
             f.write(line + "\n")
-    timestamp = datetime.now().strftime("%H:%M")
-    activity_log.insert(0, f"[{timestamp}] {truck_id} → {new_status}")
 
 @app.route("/")
 def index():
@@ -58,11 +56,14 @@ def index():
     logistics_times = {}
 
     for truck_id, status in truck_status.items():
-        if status == "logistics":
+        if status == "logistics" or status == "destination":
             start_time = logistics_timer.get(truck_id)
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if now - start_time >= timedelta(minutes=20):
+                if status == "logistics" and now - start_time >= timedelta(minutes=10):
+            flash_trucks.append(truck_id)
+        elif status == "destination" and now - start_time >= timedelta(minutes=20):
+            flash_trucks.append(truck_id)
                     flash_trucks.append(truck_id)
 
     available_medics = sum(

@@ -17,6 +17,7 @@
         .status-available { color: green; font-weight: bold; }
         .status-out { color: blue; font-weight: bold; }
         .status-logistics { color: orange; font-weight: bold; }
+        .status-destination { color: goldenrod; font-weight: bold; }
 
         @keyframes flashRed {
             0%   { color: inherit; }
@@ -69,17 +70,23 @@
                         {% if status[truck.id] == 'available' %} status-available
                         {% elif status[truck.id] == 'out' %} status-out
                         {% elif status[truck.id] == 'logistics' %} status-logistics
+                        {% elif status[truck.id] == 'destination' %} status-destination
                         {% endif %}">
                         {{ status[truck.id] }}
                     </span>
 
-                    {% if status[truck.id] == "logistics" %}
+                    {% if status[truck.id] == "logistics" or status[truck.id] == "destination" %}
                         <span id="timer-{{ truck.id }}" data-start="{{ logistics_times[truck.id] }}"></span>
-                        <a href="/reset_logistics/{{ truck.id }}">[Reset — Cleared Logistics]</a>
+                        {% if status[truck.id] == "logistics" %}
+                            <a href="/reset_logistics/{{ truck.id }}">[Reset — Cleared Logistics]</a>
+                        {% else %}
+                            <a href="/reset_destination/{{ truck.id }}">[Reset — Cleared Destination]</a>
+                        {% endif %}
                     {% elif status[truck.id] == "out" %}
                         <a href="/reset/{{ truck.id }}">[Reset — Back from Call]</a>
                     {% elif status[truck.id] == "available" %}
                         <a href="/logistics/{{ truck.id }}">[Logistics]</a>
+                        <a href="/destination/{{ truck.id }}">[Destination]</a>
                     {% endif %}
                 </li>
             {% endif %}
@@ -102,7 +109,15 @@
 
             timerSpans.forEach(span => {
                 const startTime = new Date(span.getAttribute("data-start")).getTime();
-                const remaining = 20 * 60 * 1000 - (now - startTime);
+                const parent = span.closest("li");
+                const statusClass = parent.querySelector("span:nth-of-type(2)").className;
+
+                let duration = 10 * 60 * 1000; // logistics
+                if (statusClass.includes("status-destination")) {
+                    duration = 20 * 60 * 1000; // destination
+                }
+
+                const remaining = duration - (now - startTime);
                 if (remaining > 0) {
                     const mins = Math.floor(remaining / 60000);
                     const secs = Math.floor((remaining % 60000) / 1000);
