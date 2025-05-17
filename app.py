@@ -55,19 +55,14 @@ def index():
     flash_trucks = []
     logistics_times = {}
 
-for truck_id, status in truck_status.items():
-    if status in ["logistics", "destination"]:
-        start_time = logistics_timer.get(truck_id)
-        if start_time:
-            logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-            if status == "logistics" and now - start_time >= timedelta(minutes=10):
-                flash_trucks.append(truck_id)
-            elif status == "destination" and now - start_time >= timedelta(minutes=20):
-                flash_trucks.append(truck_id)
+    for truck_id, status in truck_status.items():
+        if status in ["logistics", "destination"]:
             start_time = logistics_timer.get(truck_id)
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if now - start_time >= timedelta(minutes=10):
+                if status == "logistics" and now - start_time >= timedelta(minutes=10):
+                    flash_trucks.append(truck_id)
+                elif status == "destination" and now - start_time >= timedelta(minutes=20):
                     flash_trucks.append(truck_id)
 
     available_medics = sum(
@@ -76,13 +71,13 @@ for truck_id, status in truck_status.items():
     )
     show_admin_alert = available_medics <= 3
 
-    return render_template("index.html", trucks=truck_data["trucks"],
+    return render_template("index.html",
+                           trucks=truck_data["trucks"],
                            status=truck_status,
                            flash_trucks=flash_trucks,
                            logistics_times=logistics_times,
                            activity_log=activity_log,
                            show_admin_alert=show_admin_alert)
-
 @app.route("/dispatch", methods=["POST"])
 def dispatch():
     truck_id = request.form["truck_id"]
