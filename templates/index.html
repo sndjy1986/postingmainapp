@@ -20,6 +20,26 @@
         .status-out { color: blue; font-weight: bold; }
         .status-logistics { color: orange; font-weight: bold; }
         .status-destination { color: goldenrod; font-weight: bold; }
+
+        .system-status-box {
+            padding: 10px;
+            background-color: #eee;
+            color: black;
+            font-weight: bold;
+            border: 2px solid black;
+            border-radius: 8px;
+            width: fit-content;
+            margin-bottom: 15px;
+        }
+        .flash-red-bg {
+            animation: flashRedBG 1s infinite;
+        }
+        @keyframes flashRedBG {
+            0%   { background-color: #eee; }
+            50%  { background-color: red; }
+            100% { background-color: #eee; }
+        }
+
         #log {
             margin-top: 30px;
             background: #f5f5f5;
@@ -42,16 +62,13 @@
     </style>
 </head>
 <body>
-    <h1>Medshore Dispatch Helper</h1>
+    <h1>Dispatch Center</h1>
 
-    <!-- System Status Box -->
-    <div style="padding: 10px; background-color: #eee; color: black; font-weight: bold;
-                border: 2px solid black; border-radius: 8px; width: fit-content;
-                margin-bottom: 15px;">
+    <div class="system-status-box {% if show_admin_alert %}flash-red-bg{% endif %}">
         System Status Level: {{ available_medics }} Medic(s) Available
     </div>
 
-    <p><a href="/availability">Truck Availability</a> |
+    <p><a href="/availability">Manage Availability</a> |
        <a href="/admin">Admin Console</a></p>
 
     <form method="POST" action="/dispatch">
@@ -66,7 +83,7 @@
         <button type="submit">Dispatch</button>
     </form>
 
-    <h2>Truck Status</h2>
+    <h2 style="font-size: 1.8em;">Truck Status</h2>
     <ul>
         {% for truck in trucks %}
             {% if status[truck.id] != "unavailable" %}
@@ -81,13 +98,9 @@
                         {{ status[truck.id] }}
                     </span>
 
-                    {% if status[truck.id] == "logistics" or status[truck.id] == "destination" %}
+                    {% if status[truck.id] in ["logistics", "destination"] %}
                         <span id="timer-{{ truck.id }}" data-start="{{ logistics_times[truck.id] }}"></span>
-                        {% if status[truck.id] == "logistics" %}
-                            <a href="/reset_logistics/{{ truck.id }}">[Reset]</a>
-                        {% else %}
-                            <a href="/reset_destination/{{ truck.id }}">[Reset]</a>
-                        {% endif %}
+                        <a href="/reset_{{ status[truck.id] }}/{{ truck.id }}">[Reset]</a>
                     {% elif status[truck.id] == "out" %}
                         <a href="/destination/{{ truck.id }}">[Destination]</a>
                         <a href="/reset/{{ truck.id }}">[Back]</a>
@@ -109,43 +122,42 @@
     </div>
 
     <script>
-    function updateTimers() {
-        const timerSpans = document.querySelectorAll('[id^="timer-"]');
-        const now = new Date().getTime();
+        function updateTimers() {
+            const timerSpans = document.querySelectorAll('[id^="timer-"]');
+            const now = new Date().getTime();
 
-        timerSpans.forEach(span => {
-            const startTime = new Date(span.getAttribute("data-start")).getTime();
-            const parent = span.closest("li");
-            const statusClass = parent.querySelector("span:nth-of-type(2)").className;
+            timerSpans.forEach(span => {
+                const startTime = new Date(span.getAttribute("data-start")).getTime();
+                const parent = span.closest("li");
+                const statusClass = parent.querySelector("span:nth-of-type(2)").className;
 
-            let duration = 10 * 60 * 1000;
-            if (statusClass.includes("status-destination")) {
-                duration = 20 * 60 * 1000;
-            }
+                let duration = 10 * 60 * 1000;
+                if (statusClass.includes("status-destination")) {
+                    duration = 20 * 60 * 1000;
+                }
 
-            const remaining = duration - (now - startTime);
-            if (remaining > 0) {
-                const mins = Math.floor(remaining / 60000);
-                const secs = Math.floor((remaining % 60000) / 1000);
-                span.textContent = ` - ${mins}:${secs.toString().padStart(2, '0')} remaining`;
-            } else {
-                span.textContent = " - Timer expired";
-            }
-        });
-    }
+                const remaining = duration - (now - startTime);
+                if (remaining > 0) {
+                    const mins = Math.floor(remaining / 60000);
+                    const secs = Math.floor((remaining % 60000) / 1000);
+                    span.textContent = ` - ${mins}:${secs.toString().padStart(2, '0')} remaining`;
+                } else {
+                    span.textContent = " - Timer expired";
+                }
+            });
+        }
 
-    setInterval(updateTimers, 1000);
-    updateTimers();
+        setInterval(updateTimers, 1000);
+        updateTimers();
 
-    // ✅ Auto-refresh every 30 seconds
-    setTimeout(() => {
-        location.reload();
-    }, 30000); // 30 sec = 30,000 ms
+        // ✅ Auto-refresh every 30 seconds
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
 
-    {% if show_admin_alert %}
-        alert("NOTIFY ADMIN OF SYSTEM STATUS");
-    {% endif %}
-</script>
-
+        {% if show_admin_alert %}
+            alert("NOTIFY ADMIN OF SYSTEM STATUS");
+        {% endif %}
+    </script>
 </body>
 </html>
