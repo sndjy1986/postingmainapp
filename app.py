@@ -55,15 +55,15 @@ def index():
     flash_trucks = []
     logistics_times = {}
 
-    for truck_id, status in truck_status.items():
-        if status in ["logistics", "destination"]:
-            start_time = logistics_timer.get(truck_id)
-            if start_time:
-                logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if status == "logistics" and now - start_time >= timedelta(minutes=10):
-                    flash_trucks.append(truck_id)
-                elif status == "destination" and now - start_time >= timedelta(minutes=20):
-                    flash_trucks.append(truck_id)
+for truck_id, status in truck_status.items():
+    if status in ["logistics", "destination"]:
+        start_time = logistics_timer.get(truck_id)
+        if start_time:
+            logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+            if status == "logistics" and now - start_time >= timedelta(minutes=10):
+                flash_trucks.append(truck_id)
+            elif status == "destination" and now - start_time >= timedelta(minutes=20):
+                flash_trucks.append(truck_id)
             start_time = logistics_timer.get(truck_id)
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
