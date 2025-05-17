@@ -28,7 +28,8 @@ def save_config(config):
 
 def log_action(truck_id, new_status):
     os.makedirs("logs", exist_ok=True)
-    now = datetime.now(pytz.timezone("US/Central"))
+    central = pytz.timezone("US/Central")
+    now = datetime.now(central)
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     entry = f"[{timestamp}] {truck_id} → {new_status}"
     activity_log.insert(0, entry)
@@ -39,7 +40,7 @@ def log_action(truck_id, new_status):
             for line in f:
                 try:
                     ts_str = line.split("]")[0][1:]
-                    ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                    ts = central.localize(datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S"))
                     if (now - ts).total_seconds() <= LOG_RETENTION_HOURS * 3600:
                         entries.append(line.strip())
                 except:
