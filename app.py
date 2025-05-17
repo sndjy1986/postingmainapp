@@ -61,7 +61,7 @@ def index():
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
                 if status == "logistics" and now - start_time >= timedelta(minutes=10):
-            flash_trucks.append(truck_id)
+                    flash_trucks.append(truck_id)
         elif status == "destination" and now - start_time >= timedelta(minutes=20):
             flash_trucks.append(truck_id)
                     flash_trucks.append(truck_id)
