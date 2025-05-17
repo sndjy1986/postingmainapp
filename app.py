@@ -1,32 +1,34 @@
+
 from flask import Flask, render_template, request, redirect, url_for, session
 import json
 import os
 from datetime import datetime, timedelta
+import pytz
 
 app = Flask(__name__)
 app.secret_key = "very_secret_key"
 
 CONFIG_PATH = "data/truck_config.json"
+truck_data = {}
+truck_status = {}
+logistics_timer = {}
+activity_log = []
+LOG_PATH = "logs/activity.log"
+LOG_RETENTION_HOURS = 72
 
 def load_config():
+    global truck_data, truck_status
     with open(CONFIG_PATH) as f:
-        return json.load(f)
+        truck_data = json.load(f)
+    truck_status = {truck["id"]: "available" for truck in truck_data["trucks"]}
 
 def save_config(config):
     with open(CONFIG_PATH, "w") as f:
         json.dump(config, f, indent=4)
 
-truck_data = load_config()
-truck_status = {truck["id"]: "available" for truck in truck_data["trucks"]}
-logistics_timer = {}
-activity_log = []
-
-LOG_PATH = "logs/activity.log"
-LOG_RETENTION_HOURS = 72
-
 def log_action(truck_id, new_status):
     os.makedirs("logs", exist_ok=True)
-    now = datetime.now()
+    now = datetime.now(pytz.timezone("US/Central"))
     timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     entry = f"[{timestamp}] {truck_id} → {new_status}"
     activity_log.insert(0, entry)
@@ -42,9 +44,7 @@ def log_action(truck_id, new_status):
                         entries.append(line.strip())
                 except:
                     pass
-
     entries.append(entry)
-
     with open(LOG_PATH, "w") as f:
         for line in entries:
             f.write(line + "\n")
@@ -52,18 +52,15 @@ def log_action(truck_id, new_status):
 @app.route("/")
 def index():
     now = datetime.utcnow()
-    flash_trucks = []
+    flash_trucks = {}
     logistics_times = {}
-
     for truck_id, status in truck_status.items():
         if status in ["logistics", "destination"]:
             start_time = logistics_timer.get(truck_id)
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if status == "logistics" and now - start_time >= timedelta(minutes=10):
-                    flash_trucks.append(truck_id)
-                elif status == "destination" and now - start_time >= timedelta(minutes=20):
-                    flash_trucks.append(truck_id)
+                if (status == "logistics" and now - start_time >= timedelta(minutes=10)) or                    (status == "destination" and now - start_time >= timedelta(minutes=20)):
+                    flash_trucks[truck_id] = True
 
     available_medics = sum(
         1 for truck in truck_data["trucks"]
@@ -85,7 +82,6 @@ def dispatch():
     truck_id = request.form["truck_id"]
     truck_status[truck_id] = "out"
     log_action(truck_id, "out")
-
     fallback_id = None
     for rule in truck_data["fallback_rules"]:
         if rule["primary"] == truck_id:
@@ -94,22 +90,15 @@ def dispatch():
                     fallback_id = candidate
                     break
             break
-
     return render_template("result.html", dispatched=truck_id, fallback=fallback_id)
 
 @app.route("/reset/<truck_id>")
-def reset(truck_id):
+@app.route("/reset_logistics/<truck_id>")
+@app.route("/reset_destination/<truck_id>")
+def reset_status(truck_id):
     truck_status[truck_id] = "available"
     logistics_timer.pop(truck_id, None)
     log_action(truck_id, "available")
-    return redirect(url_for("index"))
-
-@app.route("/reset_logistics/<truck_id>")
-def reset_logistics(truck_id):
-    if truck_status.get(truck_id) == "logistics":
-        truck_status[truck_id] = "available"
-        logistics_timer.pop(truck_id, None)
-        log_action(truck_id, "available")
     return redirect(url_for("index"))
 
 @app.route("/logistics/<truck_id>")
@@ -124,14 +113,6 @@ def make_destination(truck_id):
     truck_status[truck_id] = "destination"
     logistics_timer[truck_id] = datetime.utcnow()
     log_action(truck_id, "destination")
-    return redirect(url_for("index"))
-
-@app.route("/reset_destination/<truck_id>")
-def reset_destination(truck_id):
-    if truck_status.get(truck_id) == "destination":
-        truck_status[truck_id] = "available"
-        logistics_timer.pop(truck_id, None)
-        log_action(truck_id, "available")
     return redirect(url_for("index"))
 
 @app.route("/availability", methods=["GET", "POST"])
@@ -152,25 +133,22 @@ def admin():
             session["logged_in"] = True
             return redirect("/admin")
         return render_template("admin_login.html")
-
     if request.method == "POST":
         for truck in truck_data["trucks"]:
             new_loc = request.form.get(f"location_{truck['id']}")
             if new_loc:
                 truck["location"] = new_loc
-
         new_rules = []
         for truck in truck_data["trucks"]:
             fb_val = request.form.get(f"fallback_{truck['id']}", "")
             fb_list = [x.strip() for x in fb_val.split(",") if x.strip()]
             new_rules.append({"primary": truck["id"], "fallbacks": fb_list})
         truck_data["fallback_rules"] = new_rules
-
         save_config(truck_data)
-
     fallback_map = {rule["primary"]: ", ".join(rule["fallbacks"]) for rule in truck_data["fallback_rules"]}
     return render_template("admin.html", trucks=truck_data["trucks"], fallback_map=fallback_map)
 
 if __name__ == "__main__":
+    load_config()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

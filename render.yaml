@@ -1,7 +1,11 @@
 services:
   - type: web
-    name: truck-deployment-app
+    name: truck-dashboard
     env: python
     buildCommand: ""
-    startCommand: python app.py
+    startCommand: "python app.py"
     plan: free
+    envVars:
+      - key: FLASK_ENV
+        value: production
+    autoDeploy: true

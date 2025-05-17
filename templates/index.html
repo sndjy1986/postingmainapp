@@ -137,10 +137,10 @@
         setInterval(updateTimers, 1000);
         updateTimers();
 
-        // Auto-refresh every 10 seconds
+        // Auto-refresh every 3 minutes
         setTimeout(() => {
             location.reload();
-        }, 10000);
+        }, 180000);
 
         {% if show_admin_alert %}
             alert("NOTIFY ADMIN OF SYSTEM STATUS");
