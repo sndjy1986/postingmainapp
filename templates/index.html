@@ -109,42 +109,43 @@
     </div>
 
     <script>
-        function updateTimers() {
-            const timerSpans = document.querySelectorAll('[id^="timer-"]');
-            const now = new Date().getTime();
+    function updateTimers() {
+        const timerSpans = document.querySelectorAll('[id^="timer-"]');
+        const now = new Date().getTime();
 
-            timerSpans.forEach(span => {
-                const startTime = new Date(span.getAttribute("data-start")).getTime();
-                const parent = span.closest("li");
-                const statusClass = parent.querySelector("span:nth-of-type(2)").className;
+        timerSpans.forEach(span => {
+            const startTime = new Date(span.getAttribute("data-start")).getTime();
+            const parent = span.closest("li");
+            const statusClass = parent.querySelector("span:nth-of-type(2)").className;
 
-                let duration = 10 * 60 * 1000; // logistics default
-                if (statusClass.includes("status-destination")) {
-                    duration = 20 * 60 * 1000; // destination
-                }
+            let duration = 10 * 60 * 1000;
+            if (statusClass.includes("status-destination")) {
+                duration = 20 * 60 * 1000;
+            }
 
-                const remaining = duration - (now - startTime);
-                if (remaining > 0) {
-                    const mins = Math.floor(remaining / 60000);
-                    const secs = Math.floor((remaining % 60000) / 1000);
-                    span.textContent = ` - ${mins}:${secs.toString().padStart(2, '0')} remaining`;
-                } else {
-                    span.textContent = " - Timer expired";
-                }
-            });
-        }
+            const remaining = duration - (now - startTime);
+            if (remaining > 0) {
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                span.textContent = ` - ${mins}:${secs.toString().padStart(2, '0')} remaining`;
+            } else {
+                span.textContent = " - Timer expired";
+            }
+        });
+    }
 
-        setInterval(updateTimers, 1000);
-        updateTimers();
+    setInterval(updateTimers, 1000);
+    updateTimers();
 
-        // Auto-refresh every 3 minutes
-        setTimeout(() => {
-            location.reload();
-        }, 180000);
+    // ✅ Auto-refresh every 30 seconds
+    setTimeout(() => {
+        location.reload();
+    }, 30000); // 30 sec = 30,000 ms
 
-        {% if show_admin_alert %}
-            alert("NOTIFY ADMIN OF SYSTEM STATUS");
-        {% endif %}
-    </script>
+    {% if show_admin_alert %}
+        alert("NOTIFY ADMIN OF SYSTEM STATUS");
+    {% endif %}
+</script>
+
 </body>
 </html>
