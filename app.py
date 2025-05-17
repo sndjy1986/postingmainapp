@@ -79,3 +79,7 @@ def index():
                            activity_log=activity_log,
                            show_admin_alert=show_admin_alert,
                            available_medics=available_medics)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Render sets this env variable
+    app.run(host="0.0.0.0", port=port)
