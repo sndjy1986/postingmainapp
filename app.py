@@ -56,14 +56,11 @@ def index():
     logistics_times = {}
 
     for truck_id, status in truck_status.items():
-        if status == "logistics" or status == "destination":
+        if status == "logistics":
             start_time = logistics_timer.get(truck_id)
             if start_time:
                 logistics_times[truck_id] = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                if status == "logistics" and now - start_time >= timedelta(minutes=10):
-                    flash_trucks.append(truck_id)
-        elif status == "destination" and now - start_time >= timedelta(minutes=20):
-            flash_trucks.append(truck_id)
+                if now - start_time >= timedelta(minutes=10):
                     flash_trucks.append(truck_id)
 
     available_medics = sum(
@@ -161,3 +158,19 @@ def admin():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
+
+@app.route("/destination/<truck_id>")
+def make_destination(truck_id):
+    truck_status[truck_id] = "destination"
+    logistics_timer[truck_id] = datetime.utcnow()
+    log_action(truck_id, "destination")
+    return redirect(url_for("index"))
+
+@app.route("/reset_destination/<truck_id>")
+def reset_destination(truck_id):
+    if truck_status.get(truck_id) == "destination":
+        truck_status[truck_id] = "available"
+        logistics_timer.pop(truck_id, None)
+        log_action(truck_id, "available")
+    return redirect(url_for("index"))
